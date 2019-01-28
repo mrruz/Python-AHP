@@ -1,34 +1,48 @@
 import pandas
 li = ['Price or Cost', 'Storage Space', 'Camera', 'Looks']
 
-df = pandas.DataFrame(1.0, columns=li, index=li)
+class PairwiseComparison:
+    def __init__(self, li):
+        self.df = pandas.DataFrame(1.0, columns=li, index=li)
+        
+    def pairwise(self):
+        ## Pair-wise comparison
+        z = len(li)
+        col = 0
+        row = 0
+        while row < z:
+            while col < z:    
+                if col != row:
+                    print('Comparing\n A: {}\nTO\n B: {}'.format(li[row], li[col]))
+                    answer = float(input('ENTER: '))
+                    self.df[li[col]][li[row]] = answer
+                    self.df[li[row]][li[col]] = 1 / answer
+                col += 1   
+            row += 1
+            col = row
+            
+        # Copy for calculating the criteria weight
+        df2 = self.df.copy()
+        df2.loc[:, li] = df2.loc[:, li].div(df2.sum(axis=0), axis=1)
+        df2['Criteria Weight'] = df2.mean(axis=1)
 
-z = len(li)
-col = 0
-row = 0
+        # Shrink the df
+        df2 = df2['Criteria Weight']
 
-## Pair-wise comparison
-while row < z:
-    while col < z:    
-        if col != row:
-            print('Comparing\n A: {}\nTO\n B: {}'.format(li[row], li[col]))
-##            print('(1 = A is greater | 2 = Both are equal | 3 = B is greater)')
-            answer = float(input('ENTER: '))
-            df[li[col]][li[row]] = answer
-            df[li[row]][li[col]] = 1 / answer
-        col += 1   
-    row += 1
-    col = row
+        # Calculate the original df
+        self.df = pandas.DataFrame(self.df.values*df2.values, columns=self.df.columns, index=self.df.index)
+        self.df['Weighted Sum Value'] = self.df.sum(axis=1)
 
-df2 = df.copy()
+        # Join
+        self.df = self.df.join(df2)
+        del df2
 
-df2.loc[:, li] = df2.loc[:, li].div(df2.sum(axis=0), axis=1)
-df2['Criteria Weight'] = df2.mean(axis=1)
-df2 = df2['Criteria Weight']
+    def save(self, dest):
+        self.df.to_csv(dest)
+        
+    def __exit__(self):
+        del df
 
-df = pandas.DataFrame(df.values*df2.values, columns=df.columns, index=df.index)
-df['Weighted Sum Value'] = df.sum(axis=1)
-df = df.join(df2)
-del df2
-
-df.to_csv('output.csv')
+if __name__ == '__main__':
+    x = PairwiseComparison(li)
+    x.pairwise()
